@@ -1,0 +1,1280 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Pediatric Handover &amp; Clinical Follow-up System</title>
+  <link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+
+  <!-- Clinical App Header -->
+  <header class="app-header" id="appHeader" style="display: none;">
+    <div class="header-inner">
+      <div class="brand-section">
+        <span class="brand-title">Pediatric Clinical System</span>
+        <span class="brand-subtitle">Inpatient Ward</span>
+      </div>
+
+      <div class="header-user">
+        <div id="shiftIndicatorContainer"></div>
+        <button class="btn btn-outline btn-sm" id="alertsNavBtn" onclick="app.showModal('alertsModal')">
+          Alerts <span class="badge-count" id="alertsCountBadge" style="display: none;">0</span>
+        </button>
+        <div class="user-badge">
+          <span class="user-name" id="headerUserName">Doctor Name</span>
+          <span class="user-meta" id="headerUserMeta">ID: DOC-000 | Role: Resident</span>
+        </div>
+        <button class="btn btn-outline btn-sm" onclick="app.logout()">Logout</button>
+      </div>
+    </div>
+
+    <!-- Navigation Bar -->
+    <nav class="main-nav">
+      <div class="nav-inner" style="justify-content: space-between; align-items: center;">
+        <div style="display: flex;">
+          <button class="nav-btn active" data-view="dashboard" onclick="app.navigate('dashboard')">Ward Dashboard</button>
+          <button class="nav-btn" data-view="patients" onclick="app.navigate('patients')">Patient Directory</button>
+          <button class="nav-btn" data-view="handover" onclick="app.navigate('handover')">Shift Handover</button>
+          <button class="nav-btn" data-view="admin" id="adminNavBtn" style="display: none;" onclick="app.navigate('admin')">Admin Console</button>
+        </div>
+        <div>
+          <a href="/api/docs" target="_blank" class="nav-btn" style="color: #38bdf8; text-decoration: none;">API Docs (Swagger UI) ↗</a>
+        </div>
+      </div>
+    </nav>
+  </header>
+
+  <!-- 1. Landing Page & Clinical Authentication View -->
+  <section id="loginView" class="landing-wrapper" style="display: block;">
+    <!-- Landing Top Navigation -->
+    <header class="landing-nav-bar">
+      <div class="landing-nav-inner">
+        <div class="landing-brand">
+          <span class="dept-tag">Pediatrics Department</span>
+          <h1>Pediatric Handover &amp; Clinical Follow-up System</h1>
+        </div>
+        <nav class="landing-links">
+          <a href="#clinical-pillars">Clinical Architecture</a>
+          <a href="#governance-section">Leadership &amp; Governance</a>
+          <a href="/api/docs" target="_blank" style="color: #38bdf8;">Swagger UI Docs ↗</a>
+          <a href="#staff-portal" class="btn btn-primary btn-sm">Sign In to Shift</a>
+        </nav>
+      </div>
+    </header>
+
+    <!-- Landing Hero Section -->
+    <div class="landing-hero">
+      <div class="landing-hero-inner">
+        <div>
+          <div class="hero-pill-badge">
+            <span>●</span> Inpatient Safety &amp; Shift Communication Platform
+          </div>
+          <h1 class="hero-headline">Purpose-Built Pediatric Inpatient Handover &amp; Clinical Follow-up</h1>
+          <p class="hero-subtitle">
+            A high-reliability, zero-bloat clinical communication platform engineered specifically for hospital pediatric inpatient units. Eliminates manual handover rewriting, prevents missed rapid deterioration, and enforces strict shift-based access governance.
+          </p>
+          <div style="display: flex; gap: 0.75rem; flex-wrap: wrap;">
+            <a href="#staff-portal" class="btn btn-primary" style="padding: 0.65rem 1.25rem; font-size: 0.9rem;">Sign In to Shift</a>
+            <a href="/api/docs" target="_blank" class="btn btn-outline" style="background: transparent; color: #ffffff; border-color: #475569; padding: 0.65rem 1.25rem; font-size: 0.9rem;">Open Swagger UI Docs ↗</a>
+          </div>
+
+          <!-- Hero Metrics / Badges -->
+          <div class="hero-stats-row">
+            <div class="hero-stat">
+              <span class="hero-stat-value">100%</span>
+              <span class="hero-stat-label">Append-Only Vitals</span>
+            </div>
+            <div class="hero-stat">
+              <span class="hero-stat-value">45 min</span>
+              <span class="hero-stat-label">Handover Buffer</span>
+            </div>
+            <div class="hero-stat">
+              <span class="hero-stat-value">1-Click</span>
+              <span class="hero-stat-label">Deterioration Escalation</span>
+            </div>
+            <div class="hero-stat">
+              <span class="hero-stat-value">Zero</span>
+              <span class="hero-stat-label">EMR Bloat / Overwrite</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Staff Portal Card (Right Column) -->
+        <div class="landing-portal-card" id="staff-portal">
+          <div class="portal-title-row">
+            <h2>Clinician Portal Sign-In</h2>
+            <a href="/api/docs" target="_blank" style="font-size: 0.75rem; color: var(--primary); font-weight: 700; text-decoration: none;">Swagger API ↗</a>
+          </div>
+          <p style="font-size: 0.8rem; color: var(--text-dim); margin-bottom: 1.25rem;">
+            Authorized Hospital Pediatrics Staff Only
+          </p>
+
+          <div id="loginError" style="display: none; padding: 0.65rem; background: var(--critical-bg); border: 1px solid var(--critical-border); color: var(--critical); border-radius: var(--radius-sm); font-size: 0.82rem; margin-bottom: 1rem;"></div>
+
+          <form id="loginForm" onsubmit="app.handleLogin(event)">
+            <div class="form-group">
+              <label>Hospital Staff Email</label>
+              <input type="email" class="form-control" id="loginEmail" required autofocus placeholder="staff@hospital.org">
+            </div>
+            <div class="form-group" style="margin-bottom: 1.25rem;">
+              <label>Password</label>
+              <input type="password" class="form-control" id="loginPassword" required placeholder="Enter password">
+            </div>
+            <button type="submit" class="btn btn-primary" style="width: 100%; padding: 0.65rem;">Sign In to Active Shift</button>
+          </form>
+
+          <!-- Quick-Fill Demo Clinicians -->
+          <div class="quick-demo-accounts">
+            <div class="demo-title">Quick Demo Login (Click to Auto-fill):</div>
+            <div class="demo-pills-grid">
+              <button type="button" class="demo-btn admin-pill" onclick="app.quickFillLogin('admin@hospital.org', 'Password123!')">
+                Admin (Amira Fouad)
+              </button>
+              <button type="button" class="demo-btn" onclick="app.quickFillLogin('consultant@hospital.org', 'Password123!')">
+                Consultant (Dr. Mariam)
+              </button>
+              <button type="button" class="demo-btn" onclick="app.quickFillLogin('specialist@hospital.org', 'Password123!')">
+                Specialist (Dr. Tariq)
+              </button>
+              <button type="button" class="demo-btn" onclick="app.quickFillLogin('resident@hospital.org', 'Password123!')">
+                Resident (Dr. Omar)
+              </button>
+              <button type="button" class="demo-btn" style="border-color: var(--critical-border); color: var(--critical);" onclick="app.quickFillLogin('offshift.doc@hospital.org', 'Password123!')">
+                Off-Shift Doctor (Lockout Test)
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Section: Clinical Core Architecture & Capabilities -->
+    <div class="landing-section" id="clinical-pillars">
+      <div class="section-header-block">
+        <div class="section-tag">Clinical Architecture</div>
+        <h2 class="section-title">Engineered Specifically for Inpatient Pediatrics</h2>
+        <p class="section-description">
+          Traditional hospital EMRs are burdened by complex billing, appointments, and fragmented screens. This system delivers high-density clinical clarity designed around bedside shift change workflows.
+        </p>
+      </div>
+
+      <div class="feature-grid-cards">
+        <!-- Pillar 1: Automated Handover -->
+        <div class="feature-pillar accent-primary">
+          <div>
+            <div class="pillar-header">
+              <span class="pillar-badge status-Stable">Shift Handover</span>
+              <span style="font-size: 0.72rem; color: var(--text-dim); font-weight: 700;">No Retyping</span>
+            </div>
+            <h3 class="pillar-title">Automated Handover Synthesis</h3>
+            <p class="pillar-desc">
+              Dynamically compiles up-to-the-minute active problems, ongoing IV fluids, oxygen delivery modes (HFNC, CPAP), pending investigations, and unhandled tasks into a structured handover card.
+            </p>
+          </div>
+          <div class="pillar-spec">
+            <strong>Clinical Rule:</strong> Automatically flags <em>"Critical — Verbal Handover Required"</em> when deterioration or abnormal lab values are active.
+          </div>
+        </div>
+
+        <!-- Pillar 2: Rapid Deterioration -->
+        <div class="feature-pillar accent-critical">
+          <div>
+            <div class="pillar-header">
+              <span class="pillar-badge status-Critical">Rapid Deterioration</span>
+              <span style="font-size: 0.72rem; color: var(--critical); font-weight: 700;">Emergency Flow</span>
+            </div>
+            <h3 class="pillar-title">1-Click Bedside Escalation</h3>
+            <p class="pillar-desc">
+              Immediately records clinical triggers, actions taken, and escalation tiers (PICU review, Emergency Code). Escalates patient status to Critical with fixed clinical reason validation and ward alerts.
+            </p>
+          </div>
+          <div class="pillar-spec">
+            <strong>Safety Guard:</strong> Enforces mandatory clinical reasons (respiratory distress, convulsions, desaturation, poor perfusion) from a vetted list.
+          </div>
+        </div>
+
+        <!-- Pillar 3: Zero-Overwrite -->
+        <div class="feature-pillar accent-success">
+          <div>
+            <div class="pillar-header">
+              <span class="pillar-badge" style="background: var(--success-bg); color: var(--success); border: 1px solid var(--success-border);">Clinical Safety</span>
+              <span style="font-size: 0.72rem; color: var(--text-dim); font-weight: 700;">Immutable History</span>
+            </div>
+            <h3 class="pillar-title">Zero Overwrite Architecture</h3>
+            <p class="pillar-desc">
+              Physiological vitals are append-only. Management plans use an immutable versioned stack (v1, v2, ...) authored by Specialists and Consultants; old plans are superseded, never destroyed.
+            </p>
+          </div>
+          <div class="pillar-spec">
+            <strong>Audit Integrity:</strong> Every status update, resolution note, and prescription is permanently bound to actor Staff ID and timestamp.
+          </div>
+        </div>
+
+        <!-- Pillar 4: Shift-Lockout -->
+        <div class="feature-pillar accent-warning">
+          <div>
+            <div class="pillar-header">
+              <span class="pillar-badge status-Close-Monitoring">Access Control</span>
+              <span style="font-size: 0.72rem; color: var(--warning); font-weight: 700;">Shift-Gated</span>
+            </div>
+            <h3 class="pillar-title">Shift-Based Lockout &amp; Grace Buffer</h3>
+            <p class="pillar-desc">
+              Restricts medical record access strictly to scheduled clinical shifts with a 45-minute handover buffer before and after shift. Prevents off-shift access while supporting instant emergency overrides.
+            </p>
+          </div>
+          <div class="pillar-spec">
+            <strong>Override Mechanism:</strong> System Administrator Amira Fouad can issue temporary 4h to 24h emergency overrides during crisis coverage.
+          </div>
+        </div>
+
+        <!-- Pillar 5: 'What Changed?' Delta -->
+        <div class="feature-pillar accent-primary">
+          <div>
+            <div class="pillar-header">
+              <span class="pillar-badge status-Stable">Intelligence</span>
+              <span style="font-size: 0.72rem; color: var(--text-dim); font-weight: 700;">Delta Engine</span>
+            </div>
+            <h3 class="pillar-title">'What Changed?' Delta Calculation</h3>
+            <p class="pillar-desc">
+              When a doctor re-opens a patient, the system surfaces meaningful deltas since their last visit: status escalations, unreviewed lab results, completed tasks, and consultant updates.
+            </p>
+          </div>
+          <div class="pillar-spec">
+            <strong>Lightweight Model:</strong> Powered by PatientView tracking, ensuring doctors never miss overnight clinical developments.
+          </div>
+        </div>
+
+        <!-- Pillar 6: Investigation Lifecycle -->
+        <div class="feature-pillar accent-warning">
+          <div>
+            <div class="pillar-header">
+              <span class="pillar-badge status-Close-Monitoring">Diagnostics</span>
+              <span style="font-size: 0.72rem; color: var(--text-dim); font-weight: 700;">4-Stage Lifecycle</span>
+            </div>
+            <h3 class="pillar-title">Result Review Governance</h3>
+            <p class="pillar-desc">
+              Strict distinction between Requested, Pending, Result Available, and Reviewed. Highlights unreviewed results on the dashboard and handover sheet until signed off by senior staff.
+            </p>
+          </div>
+          <div class="pillar-spec">
+            <strong>Abnormal Lab Alert:</strong> Critical abnormal results automatically trigger high-priority alerts across the clinical team.
+          </div>
+        </div>
+      </div>
+
+      <!-- Leadership & System Administration Banner (Featuring Amira Fouad) -->
+      <div class="leadership-banner" id="governance-section">
+        <div class="leadership-info">
+          <span class="pillar-badge" style="background: rgba(56, 189, 248, 0.2); color: #38bdf8; border: 1px solid rgba(56, 189, 248, 0.4); margin-bottom: 0.75rem; display: inline-block;">
+            Department Leadership &amp; Governance
+          </span>
+          <h3>System Administrator &amp; Clinical Lead: Amira Fouad</h3>
+          <div class="leadership-role">Staff ID: ADM-001 | Pediatric Inpatient Ward Administration</div>
+          <p class="leadership-notes">
+            Responsible for system administration, staff account provisioning with unique Staff IDs, clinician role and permission matrix management, roster shift scheduling, and emergency shift access overrides across the Department of Pediatrics.
+          </p>
+        </div>
+        <div>
+          <a href="#staff-portal" class="btn btn-primary" style="padding: 0.65rem 1.25rem;">Access Staff Console</a>
+        </div>
+      </div>
+    </div>
+
+    <!-- Landing Footer -->
+    <footer class="landing-footer">
+      <div>Pediatric Handover &amp; Clinical Follow-up System • Department of Pediatrics</div>
+      <div style="margin-top: 0.35rem; font-size: 0.75rem;">
+        Clinical System Administrator: <strong>Amira Fouad (ADM-001)</strong> | Interactive Documentation: <a href="/api/docs" target="_blank" style="color: #38bdf8;">Swagger UI API Specification</a>
+      </div>
+    </footer>
+  </section>
+
+  <!-- Main Clinical Workspaces Container (Authenticated) -->
+  <main class="container" id="mainContainer" style="display: none;">
+
+    <!-- 2. Shift Lockout View -->
+    <section id="lockoutView" style="display: none;">
+      <div class="lockout-card">
+        <h2>Access Restricted</h2>
+        <p style="font-weight: 600; color: #334155; margin-bottom: 0.75rem;">Outside Scheduled Shift Hours</p>
+        <p style="font-size: 0.85rem; color: var(--text-muted); margin-bottom: 1.5rem;">
+          In accordance with hospital privacy and handover governance policies, access to inpatient medical records is restricted to your assigned clinical shift hours.
+        </p>
+        <div style="background: var(--surface-subtle); padding: 1rem; border-radius: var(--radius-sm); border: 1px solid var(--border-light); margin-bottom: 1.5rem; font-size: 0.85rem; text-align: left;">
+          <div><strong>Staff Member:</strong> <span id="lockoutUserName"></span></div>
+          <div><strong>Staff ID:</strong> <span id="lockoutUserId"></span></div>
+          <div style="margin-top: 0.5rem; color: var(--text-dim);">To gain immediate access, please contact the shift supervisor or administrator for an <strong>Emergency Shift Override</strong>.</div>
+        </div>
+        <button class="btn btn-outline" onclick="app.logout()">Return to Login</button>
+      </div>
+    </section>
+
+    <!-- 3. Dashboard View -->
+    <section id="dashboardView" style="display: none;">
+      <!-- Counters Row -->
+      <div class="metrics-row">
+        <div class="metric-card critical">
+          <span class="metric-label">Critical Patients</span>
+          <span class="metric-value" id="countCritical" style="color: var(--critical);">0</span>
+        </div>
+        <div class="metric-card warning">
+          <span class="metric-label">Close Monitoring</span>
+          <span class="metric-value" id="countCloseMonitoring" style="color: var(--warning);">0</span>
+        </div>
+        <div class="metric-card stable">
+          <span class="metric-label">Stable Inpatients</span>
+          <span class="metric-value" id="countStable" style="color: var(--stable);">0</span>
+        </div>
+        <div class="metric-card primary">
+          <span class="metric-label">Total Active Beds</span>
+          <span class="metric-value" id="countTotalActive" style="color: var(--primary);">0</span>
+        </div>
+      </div>
+
+      <!-- Quick Action Toolbar -->
+      <div class="toolbar">
+        <div style="display: flex; gap: 0.5rem; flex-wrap: wrap;">
+          <button class="btn btn-primary" onclick="app.showModal('addPatientModal')">Add Inpatient</button>
+          <button class="btn btn-critical" onclick="app.showQuickDeteriorationModal()">Record Deterioration</button>
+          <button class="btn btn-outline" onclick="app.navigate('handover')">Ward Handover Sheet</button>
+        </div>
+        <div class="search-box">
+          <input type="text" id="dashboardSearchInput" placeholder="Quick search patient by name, bed, file number..." oninput="app.handleDashboardSearch(event)">
+        </div>
+      </div>
+
+      <!-- Dashboard Grid: Critical Patients Shelf & Action Queues -->
+      <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(360px, 1fr)); gap: 1.25rem;">
+        
+        <!-- Critical Patients Panel -->
+        <div style="background: var(--surface); border: 1px solid var(--border-light); border-radius: var(--radius-md); padding: 1rem; box-shadow: var(--shadow-sm);">
+          <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 0.75rem;">
+            <h3 style="font-size: 0.95rem; font-weight: 700; color: var(--critical);">Critical Patients (Priority Review)</h3>
+            <span class="badge-status status-Critical" id="criticalShelfBadge">0 Critical</span>
+          </div>
+          <div id="criticalPatientsList">
+            <p style="color: var(--text-dim); font-size: 0.82rem;">No critical patients at this time.</p>
+          </div>
+        </div>
+
+        <!-- Important Pending Results Panel -->
+        <div style="background: var(--surface); border: 1px solid var(--border-light); border-radius: var(--radius-md); padding: 1rem; box-shadow: var(--shadow-sm);">
+          <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 0.75rem;">
+            <h3 style="font-size: 0.95rem; font-weight: 700; color: #0f172a;">Unreviewed Lab / Radiology Results</h3>
+            <span class="badge-status status-Close-Monitoring" id="pendingResultsBadge">0 Pending</span>
+          </div>
+          <div id="pendingResultsList">
+            <p style="color: var(--text-dim); font-size: 0.82rem;">No unreviewed results.</p>
+          </div>
+        </div>
+
+        <!-- My Tasks Queue -->
+        <div style="background: var(--surface); border: 1px solid var(--border-light); border-radius: var(--radius-md); padding: 1rem; box-shadow: var(--shadow-sm);">
+          <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 0.75rem;">
+            <h3 style="font-size: 0.95rem; font-weight: 700; color: #0f172a;">My Clinical Tasks</h3>
+            <span class="badge-status status-Stable" id="myTasksBadge">0 Active</span>
+          </div>
+          <div id="myTasksList">
+            <p style="color: var(--text-dim); font-size: 0.82rem;">No pending tasks assigned to you.</p>
+          </div>
+        </div>
+
+        <!-- Overdue Department Tasks -->
+        <div style="background: var(--surface); border: 1px solid var(--border-light); border-radius: var(--radius-md); padding: 1rem; box-shadow: var(--shadow-sm);">
+          <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 0.75rem;">
+            <h3 style="font-size: 0.95rem; font-weight: 700; color: var(--critical);">Overdue Tasks</h3>
+            <span class="badge-status status-Critical" id="overdueTasksBadge">0 Overdue</span>
+          </div>
+          <div id="overdueTasksList">
+            <p style="color: var(--text-dim); font-size: 0.82rem;">No overdue tasks in the ward.</p>
+          </div>
+        </div>
+
+      </div>
+    </section>
+
+    <!-- 4. Patient Directory View -->
+    <section id="patientsView" style="display: none;">
+      <div class="toolbar">
+        <div class="search-box">
+          <input type="text" id="patientFilterSearch" placeholder="Search by name, bed, file #, diagnosis..." oninput="app.loadPatients()">
+        </div>
+        <div class="filter-group">
+          <select class="filter-select" id="patientFilterStatus" onchange="app.loadPatients()">
+            <option value="">All Statuses</option>
+            <option value="Critical">Critical</option>
+            <option value="Close Monitoring">Close Monitoring</option>
+            <option value="Stable">Stable</option>
+          </select>
+          <select class="filter-select" id="patientFilterDischarge" onchange="app.loadPatients()">
+            <option value="false">Active Inpatients</option>
+            <option value="true">Discharged / Transferred</option>
+          </select>
+          <button class="btn btn-primary" onclick="app.showModal('addPatientModal')">Add Patient</button>
+        </div>
+      </div>
+
+      <div class="patient-grid" id="patientsGrid">
+        <!-- Rendered Patient Cards -->
+      </div>
+    </section>
+
+    <!-- 5. Patient Profile Workspace View -->
+    <section id="profileView" style="display: none;">
+      <div style="margin-bottom: 0.75rem;">
+        <button class="btn btn-outline btn-sm" onclick="app.navigate('patients')">← Back to Patient Directory</button>
+      </div>
+
+      <!-- Identity Header & Quick Actions -->
+      <div class="profile-header">
+        <div class="profile-title-row">
+          <div>
+            <div style="display: flex; align-items: center; gap: 0.75rem; margin-bottom: 0.25rem;">
+              <span class="card-bed" id="profileBed">Bed --</span>
+              <h2 style="font-size: 1.35rem; font-weight: 800; color: #0f172a;" id="profileName">Patient Name</h2>
+              <span class="badge-status" id="profileStatusBadge">Stable</span>
+            </div>
+            <div style="font-size: 0.82rem; color: var(--text-dim);" id="profileMeta">
+              Age: -- | Weight: -- kg | File: -- | ID: --
+            </div>
+            <div style="font-size: 0.82rem; margin-top: 0.35rem;">
+              <strong>Main Diagnosis:</strong> <span id="profileDiagnosis">--</span>
+              &nbsp;|&nbsp; <strong>Allergies:</strong> <span id="profileAllergies" style="color: var(--critical); font-weight: 700;">NKDA</span>
+            </div>
+            <div id="profileCriticalReasonRow" style="display: none; margin-top: 0.35rem; color: var(--critical); font-weight: 700; font-size: 0.82rem;">
+              Reason for Critical Status: <span id="profileCriticalReason">--</span>
+            </div>
+          </div>
+
+          <div style="display: flex; gap: 0.5rem; flex-wrap: wrap;">
+            <button class="btn btn-critical" onclick="app.showPatientDeteriorationModal()">Record Deterioration</button>
+            <button class="btn btn-outline" onclick="app.showUpdateStatusModal()">Update Status</button>
+            <button class="btn btn-outline" onclick="app.showModal('dischargeModal')">Discharge / Transfer</button>
+          </div>
+        </div>
+
+        <!-- Latest Vitals Ribbon -->
+        <div class="patient-vital-stats" id="profileVitalsRibbon">
+          <div class="stat-item"><span class="stat-label">Temperature</span><span class="stat-val" id="statTemp">--</span></div>
+          <div class="stat-item"><span class="stat-label">Heart Rate</span><span class="stat-val" id="statHR">--</span></div>
+          <div class="stat-item"><span class="stat-label">Resp Rate</span><span class="stat-val" id="statRR">--</span></div>
+          <div class="stat-item"><span class="stat-label">BP</span><span class="stat-val" id="statBP">--</span></div>
+          <div class="stat-item"><span class="stat-label">SpO2</span><span class="stat-val" id="statSpO2">--</span></div>
+          <div class="stat-item"><span class="stat-label">GCS</span><span class="stat-val" id="statGCS">--</span></div>
+          <div class="stat-item"><span class="stat-label">Oxygen Support</span><span class="stat-val" id="statO2">--</span></div>
+          <div class="stat-item"><span class="stat-label">IV Fluids</span><span class="stat-val" id="statIV">--</span></div>
+        </div>
+      </div>
+
+      <!-- "What Changed?" Dynamic Delta Banner -->
+      <div id="whatChangedContainer" style="display: none;"></div>
+
+      <!-- Workspace Tabs -->
+      <div class="tabs-nav">
+        <button class="tab-btn active" data-tab="overview" onclick="app.switchProfileTab('overview')">Overview &amp; Vitals</button>
+        <button class="tab-btn" data-tab="problems" onclick="app.switchProfileTab('problems')">Active Problems</button>
+        <button class="tab-btn" data-tab="investigations" onclick="app.switchProfileTab('investigations')">Investigations &amp; Results</button>
+        <button class="tab-btn" data-tab="management" onclick="app.switchProfileTab('management')">Management Plans</button>
+        <button class="tab-btn" data-tab="tasks" onclick="app.switchProfileTab('tasks')">Clinical Tasks</button>
+        <button class="tab-btn" data-tab="timeline" onclick="app.switchProfileTab('timeline')">Timeline Stream</button>
+      </div>
+
+      <!-- Tab Content 1: Overview & Vitals -->
+      <div class="tab-pane" id="tabOverview">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.75rem;">
+          <h4 style="font-size: 0.95rem; font-weight: 700;">Bedside Vital Signs History (Append-Only)</h4>
+          <button class="btn btn-primary btn-sm" onclick="app.showModal('addVitalsModal')">Record Vitals</button>
+        </div>
+        <div class="table-responsive">
+          <table class="clinical-table">
+            <thead>
+              <tr>
+                <th>Date / Time</th>
+                <th>Temp (°C)</th>
+                <th>HR (bpm)</th>
+                <th>RR (bpm)</th>
+                <th>BP (mmHg)</th>
+                <th>SpO2 (%)</th>
+                <th>GCS</th>
+                <th>Oxygen Support</th>
+                <th>IV Fluids</th>
+                <th>Recorded By</th>
+              </tr>
+            </thead>
+            <tbody id="vitalsTableBody">
+              <tr><td colspan="10" style="text-align: center; color: var(--text-dim);">No vitals recorded yet.</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- Tab Content 2: Active Problems -->
+      <div class="tab-pane" id="tabProblems" style="display: none;">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.75rem;">
+          <h4 style="font-size: 0.95rem; font-weight: 700;">Problems List (Active &amp; Resolved History)</h4>
+          <button class="btn btn-primary btn-sm" onclick="app.showModal('addProblemModal')">Add Active Problem</button>
+        </div>
+        <div id="problemsList">
+          <!-- Rendered Problems -->
+        </div>
+      </div>
+
+      <!-- Tab Content 3: Investigations -->
+      <div class="tab-pane" id="tabInvestigations" style="display: none;">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.75rem;">
+          <h4 style="font-size: 0.95rem; font-weight: 700;">Diagnostic Investigations</h4>
+          <button class="btn btn-primary btn-sm" onclick="app.showModal('requestInvestigationModal')">Request Investigation</button>
+        </div>
+        <div class="table-responsive">
+          <table class="clinical-table">
+            <thead>
+              <tr>
+                <th>Investigation</th>
+                <th>Type</th>
+                <th>Requested Date</th>
+                <th>Status</th>
+                <th>Result</th>
+                <th>Reviewed By</th>
+                <th>Actions</th>
+              </tr>
+            </thead>
+            <tbody id="investigationsTableBody">
+              <tr><td colspan="7" style="text-align: center; color: var(--text-dim);">No investigations on record.</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- Tab Content 4: Management Plans -->
+      <div class="tab-pane" id="tabManagement" style="display: none;">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.75rem;">
+          <h4 style="font-size: 0.95rem; font-weight: 700;">Management Plans (Versioned Stack)</h4>
+          <button class="btn btn-primary btn-sm" id="addPlanBtn" onclick="app.showModal('addPlanModal')">Author New Plan Version</button>
+        </div>
+        <div id="managementPlansStack">
+          <!-- Rendered Management Plans -->
+        </div>
+      </div>
+
+      <!-- Tab Content 5: Tasks -->
+      <div class="tab-pane" id="tabTasks" style="display: none;">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.75rem;">
+          <h4 style="font-size: 0.95rem; font-weight: 700;">Patient Tasks &amp; To-Do</h4>
+          <button class="btn btn-primary btn-sm" onclick="app.showModal('addTaskModal')">Add Task</button>
+        </div>
+        <div id="patientTasksList">
+          <!-- Rendered Tasks -->
+        </div>
+      </div>
+
+      <!-- Tab Content 6: Timeline -->
+      <div class="tab-pane" id="tabTimeline" style="display: none;">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.75rem;">
+          <h4 style="font-size: 0.95rem; font-weight: 700;">Unified Chronological History (Zero-Storage Aggregation)</h4>
+          <button class="btn btn-outline btn-sm" onclick="app.showModal('addUpdateModal')">Add Clinical Note</button>
+        </div>
+        <div class="timeline-list" id="patientTimelineStream">
+          <!-- Rendered Timeline -->
+        </div>
+      </div>
+
+    </section>
+
+    <!-- 6. Shift Handover View -->
+    <section id="handoverView" style="display: none;">
+      <div class="toolbar">
+        <h3 style="font-size: 1.1rem; font-weight: 800;">Ward Shift Handover Workspace</h3>
+        <div style="display: flex; gap: 0.5rem;">
+          <button class="btn btn-primary" onclick="app.loadWardHandoverSheet()">Refresh Ward Sheet</button>
+        </div>
+      </div>
+
+      <p style="font-size: 0.82rem; color: var(--text-dim); margin-bottom: 1rem;">
+        Structured clinical summaries auto-compiled in real time. Eliminates error-prone manual retyping while highlighting critical warnings and unreviewed results.
+      </p>
+
+      <div id="wardHandoverCards">
+        <!-- Rendered Handover Cards for each active patient -->
+      </div>
+    </section>
+
+    <!-- 7. Admin Console View -->
+    <section id="adminView" style="display: none;">
+      <div class="toolbar">
+        <h3 style="font-size: 1.1rem; font-weight: 800;">Hospital Department Administration</h3>
+      </div>
+
+      <div class="tabs-nav" style="margin-bottom: 1rem;">
+        <button class="tab-btn active" data-admintab="users" onclick="app.switchAdminTab('users')">Staff &amp; User Accounts</button>
+        <button class="tab-btn" data-admintab="shifts" onclick="app.switchAdminTab('shifts')">Shift Roster &amp; Access Controls</button>
+        <button class="tab-btn" data-admintab="audit" onclick="app.switchAdminTab('audit')">Immutable Audit Trail</button>
+      </div>
+
+      <!-- Admin Tab 1: Staff Users -->
+      <div id="adminTabUsers">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.75rem;">
+          <p style="font-size: 0.82rem; color: var(--text-dim);">Only Admin can create user accounts, assign unique Staff IDs, and modify clinician roles/permissions.</p>
+          <button class="btn btn-primary btn-sm" onclick="app.showModal('createUserModal')">Create Staff Account</button>
+        </div>
+        <div class="table-responsive">
+          <table class="clinical-table">
+            <thead>
+              <tr>
+                <th>Staff ID</th>
+                <th>Name</th>
+                <th>Email</th>
+                <th>Role</th>
+                <th>Status</th>
+                <th>Shift Exemption</th>
+                <th>Last Login</th>
+                <th>Actions</th>
+              </tr>
+            </thead>
+            <tbody id="adminUsersTableBody">
+              <!-- Rendered Users -->
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- Admin Tab 2: Shifts & Roster -->
+      <div id="adminTabShifts" style="display: none;">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.75rem;">
+          <p style="font-size: 0.82rem; color: var(--text-dim);">Assign shift rosters, configure grace periods, or grant instant emergency access overrides.</p>
+          <button class="btn btn-primary btn-sm" onclick="app.showModal('assignShiftModal')">Assign Clinician Shift</button>
+        </div>
+        <div class="table-responsive">
+          <table class="clinical-table">
+            <thead>
+              <tr>
+                <th>Clinician</th>
+                <th>Shift Type</th>
+                <th>Start Time</th>
+                <th>End Time</th>
+                <th>Grace Period</th>
+                <th>Status</th>
+                <th>Assigned By</th>
+              </tr>
+            </thead>
+            <tbody id="adminShiftsTableBody">
+              <!-- Rendered Shifts -->
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- Admin Tab 3: System Audit -->
+      <div id="adminTabAudit" style="display: none;">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.75rem;">
+          <p style="font-size: 0.82rem; color: var(--text-dim);">Traceable, non-erasable record of all system modifications, clinical notes, and user actions.</p>
+        </div>
+        <div class="table-responsive">
+          <table class="clinical-table">
+            <thead>
+              <tr>
+                <th>Timestamp</th>
+                <th>Actor (Staff ID)</th>
+                <th>Action</th>
+                <th>Entity</th>
+                <th>Previous Value</th>
+                <th>New Value</th>
+                <th>IP Address</th>
+              </tr>
+            </thead>
+            <tbody id="adminAuditTableBody">
+              <!-- Rendered Audit Logs -->
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+    </section>
+
+  </main>
+
+  <!-- ==================== CLINICAL ACTION MODALS ==================== -->
+
+  <!-- Add Patient Modal -->
+  <div class="modal-overlay" id="addPatientModal">
+    <div class="modal-card modal-lg">
+      <div class="modal-header">
+        <h3 class="modal-title">Register Pediatric Inpatient</h3>
+        <button class="modal-close" onclick="app.closeModal('addPatientModal')">&times;</button>
+      </div>
+      <form onsubmit="app.handleCreatePatient(event)">
+        <div class="modal-body">
+          <div class="form-row">
+            <div class="form-group">
+              <label>Patient ID *</label>
+              <input type="text" class="form-control" id="newPatientId" placeholder="PED-2026-001" required>
+            </div>
+            <div class="form-group">
+              <label>Hospital File Number *</label>
+              <input type="text" class="form-control" id="newFileNumber" placeholder="FILE-98210" required>
+            </div>
+            <div class="form-group">
+              <label>Bed Number *</label>
+              <input type="text" class="form-control" id="newBedNumber" placeholder="Bed 4B" required>
+            </div>
+          </div>
+
+          <div class="form-row">
+            <div class="form-group" style="grid-column: span 2;">
+              <label>Patient Full Name *</label>
+              <input type="text" class="form-control" id="newPatientName" required>
+            </div>
+            <div class="form-group">
+              <label>Weight (kg) *</label>
+              <input type="number" step="0.1" class="form-control" id="newPatientWeight" required placeholder="12.5">
+            </div>
+          </div>
+
+          <div class="form-row">
+            <div class="form-group">
+              <label>Age (Years)</label>
+              <input type="number" class="form-control" id="newAgeYears" min="0" value="0">
+            </div>
+            <div class="form-group">
+              <label>Age (Months)</label>
+              <input type="number" class="form-control" id="newAgeMonths" min="0" max="11" value="0">
+            </div>
+            <div class="form-group">
+              <label>Age (Days)</label>
+              <input type="number" class="form-control" id="newAgeDays" min="0" max="30" value="0">
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label>Main Diagnosis *</label>
+            <input type="text" class="form-control" id="newMainDiagnosis" required placeholder="e.g. Acute Viral Bronchiolitis">
+          </div>
+
+          <div class="form-row">
+            <div class="form-group">
+              <label>Clinical Status *</label>
+              <select class="form-control" id="newStatus" onchange="app.toggleCriticalReasonField('newStatus', 'newCriticalReasonGroup')">
+                <option value="Stable">Stable</option>
+                <option value="Close Monitoring">Close Monitoring</option>
+                <option value="Critical">Critical</option>
+              </select>
+            </div>
+            <div class="form-group" id="newCriticalReasonGroup" style="display: none;">
+              <label>Mandatory Critical Reason *</label>
+              <select class="form-control" id="newCriticalReason">
+                <option value="respiratory distress">Respiratory Distress</option>
+                <option value="increased O2 requirement">Increased O2 Requirement</option>
+                <option value="persistent desaturation">Persistent Desaturation</option>
+                <option value="altered consciousness">Altered Consciousness</option>
+                <option value="convulsions">Convulsions</option>
+                <option value="poor perfusion">Poor Perfusion</option>
+                <option value="persistent hypotension">Persistent Hypotension</option>
+                <option value="other">Other</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label>Known Allergies (comma-separated)</label>
+            <input type="text" class="form-control" id="newAllergies" value="NKDA">
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-outline" onclick="app.closeModal('addPatientModal')">Cancel</button>
+          <button type="submit" class="btn btn-primary">Admit Patient</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Rapid Deterioration Modal -->
+  <div class="modal-overlay" id="deteriorationModal">
+    <div class="modal-card">
+      <div class="modal-header" style="background: var(--critical-bg);">
+        <h3 class="modal-title" style="color: var(--critical);">Record Rapid Clinical Deterioration</h3>
+        <button class="modal-close" onclick="app.closeModal('deteriorationModal')">&times;</button>
+      </div>
+      <form onsubmit="app.handleRecordDeterioration(event)">
+        <div class="modal-body">
+          <div class="form-group">
+            <label>Select Patient *</label>
+            <select class="form-control" id="deteriorationPatientSelect" required></select>
+          </div>
+          <div class="form-group">
+            <label>Trigger / Nature of Deterioration *</label>
+            <input type="text" class="form-control" id="detTrigger" required placeholder="e.g. Sudden severe desaturation to 82% on high flow O2">
+          </div>
+          <div class="form-group">
+            <label>Clinical Escalation Level *</label>
+            <select class="form-control" id="detEscalation" required>
+              <option value="Resident to Specialist">Resident to Specialist</option>
+              <option value="Specialist to Consultant">Specialist to Consultant</option>
+              <option value="PICU Review Required">PICU Review Required</option>
+              <option value="Emergency Code Team Called">Emergency Code Team Called</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label>Immediate Bedside Action Taken *</label>
+            <textarea class="form-control" id="detAction" required placeholder="e.g. Placed on 100% Non-rebreather, bag-valve mask prepared, call placed to PICU fellow"></textarea>
+          </div>
+          <div class="form-group">
+            <label>Critical Reason Flag *</label>
+            <select class="form-control" id="detCriticalReason">
+              <option value="respiratory distress">Respiratory Distress</option>
+              <option value="persistent desaturation">Persistent Desaturation</option>
+              <option value="increased O2 requirement">Increased O2 Requirement</option>
+              <option value="altered consciousness">Altered Consciousness</option>
+              <option value="convulsions">Convulsions</option>
+              <option value="poor perfusion">Poor Perfusion</option>
+              <option value="persistent hypotension">Persistent Hypotension</option>
+              <option value="other">Other</option>
+            </select>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-outline" onclick="app.closeModal('deteriorationModal')">Cancel</button>
+          <button type="submit" class="btn btn-critical">Confirm &amp; Alert Ward</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Record Vitals Modal -->
+  <div class="modal-overlay" id="addVitalsModal">
+    <div class="modal-card">
+      <div class="modal-header">
+        <h3 class="modal-title">Record Bedside Vital Signs</h3>
+        <button class="modal-close" onclick="app.closeModal('addVitalsModal')">&times;</button>
+      </div>
+      <form onsubmit="app.handleCreateVitals(event)">
+        <div class="modal-body">
+          <div class="form-row">
+            <div class="form-group">
+              <label>Temperature (°C)</label>
+              <input type="number" step="0.1" class="form-control" id="vTemp" placeholder="37.2">
+            </div>
+            <div class="form-group">
+              <label>Heart Rate (bpm)</label>
+              <input type="number" class="form-control" id="vHR" placeholder="110">
+            </div>
+            <div class="form-group">
+              <label>Resp Rate (bpm)</label>
+              <input type="number" class="form-control" id="vRR" placeholder="32">
+            </div>
+          </div>
+          <div class="form-row">
+            <div class="form-group">
+              <label>BP Systolic (mmHg)</label>
+              <input type="number" class="form-control" id="vBPSys" placeholder="95">
+            </div>
+            <div class="form-group">
+              <label>BP Diastolic (mmHg)</label>
+              <input type="number" class="form-control" id="vBPDia" placeholder="60">
+            </div>
+            <div class="form-group">
+              <label>SpO2 (%)</label>
+              <input type="number" class="form-control" id="vSpO2" placeholder="98">
+            </div>
+            <div class="form-group">
+              <label>GCS (3-15)</label>
+              <input type="number" class="form-control" id="vGCS" min="3" max="15" placeholder="15">
+            </div>
+          </div>
+          <div class="form-group">
+            <label>Oxygen Support Mode</label>
+            <select class="form-control" id="vO2Mode">
+              <option value="Room Air">Room Air</option>
+              <option value="Nasal Cannula">Nasal Cannula</option>
+              <option value="Face Mask">Face Mask</option>
+              <option value="Non-Rebreather Mask">Non-Rebreather Mask</option>
+              <option value="High Flow Nasal Cannula">High Flow Nasal Cannula</option>
+              <option value="CPAP/BiPAP">CPAP/BiPAP</option>
+              <option value="Mechanical Ventilation">Mechanical Ventilation</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label>Ongoing IV Fluids</label>
+            <input type="text" class="form-control" id="vIVFluids" placeholder="e.g. D5 0.45% NS at 45 ml/hr">
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-outline" onclick="app.closeModal('addVitalsModal')">Cancel</button>
+          <button type="submit" class="btn btn-primary">Save to Measurement History</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Add Active Problem Modal -->
+  <div class="modal-overlay" id="addProblemModal">
+    <div class="modal-card">
+      <div class="modal-header">
+        <h3 class="modal-title">Record Active Problem</h3>
+        <button class="modal-close" onclick="app.closeModal('addProblemModal')">&times;</button>
+      </div>
+      <form onsubmit="app.handleCreateProblem(event)">
+        <div class="modal-body">
+          <div class="form-group">
+            <label>Problem Title *</label>
+            <input type="text" class="form-control" id="probTitle" required placeholder="e.g. Persistent Tachycardia">
+          </div>
+          <div class="form-group">
+            <label>Description / Details</label>
+            <textarea class="form-control" id="probDescription" placeholder="Initial clinical findings..."></textarea>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-outline" onclick="app.closeModal('addProblemModal')">Cancel</button>
+          <button type="submit" class="btn btn-primary">Save Problem</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Request Investigation Modal -->
+  <div class="modal-overlay" id="requestInvestigationModal">
+    <div class="modal-card">
+      <div class="modal-header">
+        <h3 class="modal-title">Request Investigation</h3>
+        <button class="modal-close" onclick="app.closeModal('requestInvestigationModal')">&times;</button>
+      </div>
+      <form onsubmit="app.handleRequestInvestigation(event)">
+        <div class="modal-body">
+          <div class="form-group">
+            <label>Investigation Name *</label>
+            <input type="text" class="form-control" id="invName" required placeholder="e.g. Complete Blood Count (CBC)">
+          </div>
+          <div class="form-group">
+            <label>Investigation Type *</label>
+            <select class="form-control" id="invType" required>
+              <option value="Laboratory">Laboratory</option>
+              <option value="Radiology">Radiology</option>
+              <option value="Microbiology">Microbiology</option>
+              <option value="Bedside">Bedside</option>
+              <option value="Other">Other</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label>Clinical Notes / Indications</label>
+            <input type="text" class="form-control" id="invNotes" placeholder="Urgent rule out bacteremia">
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-outline" onclick="app.closeModal('requestInvestigationModal')">Cancel</button>
+          <button type="submit" class="btn btn-primary">Submit Request</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Enter Result Modal -->
+  <div class="modal-overlay" id="enterResultModal">
+    <div class="modal-card">
+      <div class="modal-header">
+        <h3 class="modal-title">Record Investigation Result</h3>
+        <button class="modal-close" onclick="app.closeModal('enterResultModal')">&times;</button>
+      </div>
+      <form onsubmit="app.handleRecordResult(event)">
+        <input type="hidden" id="resultInvestigationId">
+        <div class="modal-body">
+          <div class="form-group">
+            <label>Result Summary *</label>
+            <textarea class="form-control" id="resText" required placeholder="e.g. WBC 19.8, Hb 10.2, Plt 380k. CRP 45 mg/L"></textarea>
+          </div>
+          <div class="form-group">
+            <label>
+              <input type="checkbox" id="resIsAbnormal"> Flag as ABNORMAL Result
+            </label>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-outline" onclick="app.closeModal('enterResultModal')">Cancel</button>
+          <button type="submit" class="btn btn-primary">Mark Result Available</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Author Management Plan Modal (Specialist/Consultant) -->
+  <div class="modal-overlay" id="addPlanModal">
+    <div class="modal-card modal-lg">
+      <div class="modal-header">
+        <h3 class="modal-title">Author Management Plan (Versioned Stack)</h3>
+        <button class="modal-close" onclick="app.closeModal('addPlanModal')">&times;</button>
+      </div>
+      <form onsubmit="app.handleCreatePlan(event)">
+        <div class="modal-body">
+          <div class="form-group">
+            <label>Management Plan *</label>
+            <textarea class="form-control" id="planText" required rows="3" placeholder="Outline primary clinical plan..."></textarea>
+          </div>
+          <div class="form-group">
+            <label>Specialist / Consultant Recommendations</label>
+            <textarea class="form-control" id="planRecommendations" rows="2" placeholder="Specific recommendations for shift team..."></textarea>
+          </div>
+          <div class="form-group">
+            <label>Clinical Reasoning</label>
+            <input type="text" class="form-control" id="planReasoning" placeholder="Pathophysiological or clinical rationale">
+          </div>
+          <div class="form-group">
+            <label>Ongoing Supportive Care &amp; Procedures</label>
+            <input type="text" class="form-control" id="planSupportive" placeholder="e.g. Chest physiotherapy Q8H, strict intake/output charting">
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-outline" onclick="app.closeModal('addPlanModal')">Cancel</button>
+          <button type="submit" class="btn btn-primary">Publish New Plan Version</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Add Task Modal -->
+  <div class="modal-overlay" id="addTaskModal">
+    <div class="modal-card">
+      <div class="modal-header">
+        <h3 class="modal-title">Create Clinical Task</h3>
+        <button class="modal-close" onclick="app.closeModal('addTaskModal')">&times;</button>
+      </div>
+      <form onsubmit="app.handleCreateTask(event)">
+        <div class="modal-body">
+          <div class="form-group">
+            <label>Description *</label>
+            <input type="text" class="form-control" id="taskDesc" required placeholder="e.g. Check repeat venous blood gas at 22:00">
+          </div>
+          <div class="form-row">
+            <div class="form-group">
+              <label>Priority</label>
+              <select class="form-control" id="taskPriority">
+                <option value="Routine">Routine</option>
+                <option value="Urgent">Urgent</option>
+                <option value="Critical">Critical</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label>Due Time *</label>
+              <input type="datetime-local" class="form-control" id="taskDueAt" required>
+            </div>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-outline" onclick="app.closeModal('addTaskModal')">Cancel</button>
+          <button type="submit" class="btn btn-primary">Create Task</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Add Clinical Note Modal -->
+  <div class="modal-overlay" id="addUpdateModal">
+    <div class="modal-card">
+      <div class="modal-header">
+        <h3 class="modal-title">Record Clinical Note / Update</h3>
+        <button class="modal-close" onclick="app.closeModal('addUpdateModal')">&times;</button>
+      </div>
+      <form onsubmit="app.handleCreateClinicalUpdate(event)">
+        <div class="modal-body">
+          <div class="form-group">
+            <label>Update Type *</label>
+            <select class="form-control" id="updateType">
+              <option value="Clinical Change">Clinical Change</option>
+              <option value="Treatment Change">Treatment Change</option>
+              <option value="Consultation">Consultation</option>
+              <option value="Other">Other</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label>Details *</label>
+            <textarea class="form-control" id="updateDetails" required rows="3"></textarea>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-outline" onclick="app.closeModal('addUpdateModal')">Cancel</button>
+          <button type="submit" class="btn btn-primary">Record to Timeline</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Update Patient Status Modal -->
+  <div class="modal-overlay" id="updateStatusModal">
+    <div class="modal-card">
+      <div class="modal-header">
+        <h3 class="modal-title">Update Patient Status</h3>
+        <button class="modal-close" onclick="app.closeModal('updateStatusModal')">&times;</button>
+      </div>
+      <form onsubmit="app.handleUpdatePatientStatus(event)">
+        <div class="modal-body">
+          <div class="form-group">
+            <label>New Status *</label>
+            <select class="form-control" id="editStatusSelect" onchange="app.toggleCriticalReasonField('editStatusSelect', 'editCriticalReasonGroup')">
+              <option value="Stable">Stable</option>
+              <option value="Close Monitoring">Close Monitoring</option>
+              <option value="Critical">Critical</option>
+            </select>
+          </div>
+          <div class="form-group" id="editCriticalReasonGroup" style="display: none;">
+            <label>Mandatory Critical Reason *</label>
+            <select class="form-control" id="editCriticalReasonSelect">
+              <option value="respiratory distress">Respiratory Distress</option>
+              <option value="increased O2 requirement">Increased O2 Requirement</option>
+              <option value="persistent desaturation">Persistent Desaturation</option>
+              <option value="altered consciousness">Altered Consciousness</option>
+              <option value="convulsions">Convulsions</option>
+              <option value="poor perfusion">Poor Perfusion</option>
+              <option value="persistent hypotension">Persistent Hypotension</option>
+              <option value="other">Other</option>
+            </select>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-outline" onclick="app.closeModal('updateStatusModal')">Cancel</button>
+          <button type="submit" class="btn btn-primary">Save Status</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Discharge Patient Modal -->
+  <div class="modal-overlay" id="dischargeModal">
+    <div class="modal-card">
+      <div class="modal-header">
+        <h3 class="modal-title">Discharge / Transfer Patient</h3>
+        <button class="modal-close" onclick="app.closeModal('dischargeModal')">&times;</button>
+      </div>
+      <form onsubmit="app.handleDischargePatient(event)">
+        <div class="modal-body">
+          <div class="form-group">
+            <label>Discharge Outcome *</label>
+            <select class="form-control" id="dischargeOutcome" required>
+              <option value="Discharged">Discharged Home</option>
+              <option value="Transferred">Transferred (PICU / Another Ward)</option>
+              <option value="Referred">Referred to External Specialty Center</option>
+              <option value="Other">Other</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label>Summary Notes / Transfer Plan *</label>
+            <textarea class="form-control" id="dischargeNotes" required placeholder="Clinical summary and discharge medication plan..."></textarea>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-outline" onclick="app.closeModal('dischargeModal')">Cancel</button>
+          <button type="submit" class="btn btn-primary">Complete Discharge</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Alerts Drawer Modal -->
+  <div class="modal-overlay" id="alertsModal">
+    <div class="modal-card modal-lg">
+      <div class="modal-header">
+        <h3 class="modal-title">Active Clinical Alerts</h3>
+        <button class="modal-close" onclick="app.closeModal('alertsModal')">&times;</button>
+      </div>
+      <div class="modal-body" id="alertsModalBody">
+        <p style="color: var(--text-dim);">Loading alerts...</p>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-outline" onclick="app.closeModal('alertsModal')">Close</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Admin: Create User Modal -->
+  <div class="modal-overlay" id="createUserModal">
+    <div class="modal-card">
+      <div class="modal-header">
+        <h3 class="modal-title">Create Staff Account (Admin Only)</h3>
+        <button class="modal-close" onclick="app.closeModal('createUserModal')">&times;</button>
+      </div>
+      <form onsubmit="app.handleCreateUser(event)">
+        <div class="modal-body">
+          <div class="form-group">
+            <label>Staff / User ID * (Unique Identifier to differentiate same names)</label>
+            <input type="text" class="form-control" id="adminNewStaffId" placeholder="e.g. DOC-104 or RES-202" required>
+          </div>
+          <div class="form-group">
+            <label>Full Name *</label>
+            <input type="text" class="form-control" id="adminNewName" required placeholder="Dr. Sarah Johnson">
+          </div>
+          <div class="form-group">
+            <label>Email *</label>
+            <input type="email" class="form-control" id="adminNewEmail" required placeholder="s.johnson@hospital.org">
+          </div>
+          <div class="form-group">
+            <label>Temporary Password *</label>
+            <input type="password" class="form-control" id="adminNewPassword" required minlength="6">
+          </div>
+          <div class="form-group">
+            <label>Role *</label>
+            <select class="form-control" id="adminNewRole">
+              <option value="Resident">Resident</option>
+              <option value="Specialist">Specialist</option>
+              <option value="Consultant">Consultant</option>
+              <option value="Admin">Admin</option>
+            </select>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-outline" onclick="app.closeModal('createUserModal')">Cancel</button>
+          <button type="submit" class="btn btn-primary">Create Account</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Admin: Assign Shift Modal -->
+  <div class="modal-overlay" id="assignShiftModal">
+    <div class="modal-card">
+      <div class="modal-header">
+        <h3 class="modal-title">Assign Clinician Shift Roster</h3>
+        <button class="modal-close" onclick="app.closeModal('assignShiftModal')">&times;</button>
+      </div>
+      <form onsubmit="app.handleAssignShift(event)">
+        <div class="modal-body">
+          <div class="form-group">
+            <label>Select Clinician *</label>
+            <select class="form-control" id="shiftUserSelect" required></select>
+          </div>
+          <div class="form-group">
+            <label>Shift Date *</label>
+            <input type="date" class="form-control" id="shiftDateInput" required>
+          </div>
+          <div class="form-group">
+            <label>Shift Type *</label>
+            <select class="form-control" id="shiftTypeSelect" onchange="app.autoFillShiftTimes()">
+              <option value="Morning">Morning (07:30 - 15:30)</option>
+              <option value="Evening">Evening (15:00 - 23:30)</option>
+              <option value="Night">Night (23:00 - 08:00)</option>
+              <option value="Custom">Custom / On-Call</option>
+            </select>
+          </div>
+          <div class="form-row">
+            <div class="form-group">
+              <label>Start Time *</label>
+              <input type="datetime-local" class="form-control" id="shiftStartInput" required>
+            </div>
+            <div class="form-group">
+              <label>End Time *</label>
+              <input type="datetime-local" class="form-control" id="shiftEndInput" required>
+            </div>
+          </div>
+          <div class="form-group">
+            <label>Handover Buffer (Minutes before/after)</label>
+            <input type="number" class="form-control" id="shiftGraceInput" value="45">
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-outline" onclick="app.closeModal('assignShiftModal')">Cancel</button>
+          <button type="submit" class="btn btn-primary">Assign to Schedule</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Load Application Logic -->
+  <script src="/js/app.js"></script>
+</body>
+</html>
