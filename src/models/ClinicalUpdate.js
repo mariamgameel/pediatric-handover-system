@@ -8,6 +8,7 @@ const CLINICAL_UPDATE_TYPES = [
     "Consultation",
     "New Task",
     "Clinical Deterioration",
+    "Clinical Protocol / SOP",
     "Other",
 ];
 

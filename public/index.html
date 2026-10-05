@@ -32,10 +32,14 @@
     <!-- Navigation Bar -->
     <nav class="main-nav">
       <div class="nav-inner" style="justify-content: space-between; align-items: center;">
-        <div style="display: flex;">
+        <div style="display: flex; gap: 0.25rem; flex-wrap: wrap;">
           <button class="nav-btn active" data-view="dashboard" onclick="app.navigate('dashboard')">Ward Dashboard</button>
           <button class="nav-btn" data-view="patients" onclick="app.navigate('patients')">Patient Directory</button>
           <button class="nav-btn" data-view="handover" onclick="app.navigate('handover')">Shift Handover</button>
+          <button class="nav-btn" data-view="guidelines" onclick="app.navigate('guidelines')">Guidelines</button>
+          <button class="nav-btn" data-view="protocols" onclick="app.navigate('protocols')">Protocols &amp; SOPs</button>
+          <button class="nav-btn" data-view="roster" onclick="app.navigate('roster')">Shift Roster</button>
+          <button class="nav-btn" data-view="manpower" onclick="app.navigate('manpower')">Ward Manpower</button>
           <button class="nav-btn" data-view="admin" id="adminNavBtn" style="display: none;" onclick="app.navigate('admin')">Admin Console</button>
         </div>
         <div>
@@ -45,6 +49,11 @@
     </nav>
   </header>
 
+  <!-- Dynamic Router Mount Point for Pages (Pages + Components Architecture) -->
+  <div id="app-root"></div>
+
+  <!-- Legacy Static Fallback Container (Hidden by Router) -->
+  <div id="legacyStaticViews" style="display: none;">
   <!-- 1. Landing Page & Clinical Authentication View -->
   <section id="loginView" class="landing-wrapper" style="display: block;">
     <!-- Landing Top Navigation -->
@@ -692,6 +701,7 @@
     </section>
 
   </main>
+  </div>
 
   <!-- ==================== CLINICAL ACTION MODALS ==================== -->
 
@@ -1274,7 +1284,7 @@
     </div>
   </div>
 
-  <!-- Load Application Logic -->
-  <script src="/js/app.js"></script>
+  <!-- Load Application Logic as ES6 Component System -->
+  <script type="module" src="/js/app.js"></script>
 </body>
 </html>

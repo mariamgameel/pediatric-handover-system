@@ -22,6 +22,9 @@ const taskRoutes = require("./routes/taskRoutes");
 const handoverRoutes = require("./routes/handoverRoutes");
 const alertRoutes = require("./routes/alertRoutes");
 const dashboardRoutes = require("./routes/dashboardRoutes");
+const guidelineRoutes = require("./routes/guidelineRoutes");
+const protocolRoutes = require("./routes/protocolRoutes");
+const manpowerRoutes = require("./routes/manpowerRoutes");
 
 const app = express();
 
@@ -69,6 +72,9 @@ app.use("/api/tasks", taskRoutes);
 app.use("/api/handovers", handoverRoutes);
 app.use("/api/alerts", alertRoutes);
 app.use("/api/dashboard", dashboardRoutes);
+app.use("/api/guidelines", guidelineRoutes);
+app.use("/api/protocols", protocolRoutes);
+app.use("/api/manpower", manpowerRoutes);
 
 // Catch-all for undefined routes
 app.all("/api/*splat", (req, res, next) => {

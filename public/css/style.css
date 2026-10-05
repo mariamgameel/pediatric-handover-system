@@ -1196,3 +1196,298 @@ textarea.form-control {
   text-align: center;
   font-size: 0.8rem;
 }
+
+/* ==========================================================================
+   Pediatric Department Guidelines & Protocols
+   ========================================================================== */
+.guideline-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(360px, 1fr));
+  gap: 1.25rem;
+  margin-top: 1.25rem;
+}
+
+.guideline-card {
+  background: var(--surface);
+  border: 1px solid var(--border-light);
+  border-radius: var(--radius-md);
+  padding: 1.25rem;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  box-shadow: var(--shadow-sm);
+  transition: transform 0.15s ease, box-shadow 0.15s ease;
+}
+
+.guideline-card:hover {
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-md);
+  border-color: var(--primary);
+}
+
+.guideline-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 0.75rem;
+  gap: 0.5rem;
+}
+
+.guideline-title {
+  font-size: 1.05rem;
+  font-weight: 700;
+  color: var(--text);
+  line-height: 1.35;
+}
+
+.category-tag {
+  display: inline-block;
+  padding: 0.2rem 0.6rem;
+  font-size: 0.7rem;
+  font-weight: 700;
+  border-radius: 9999px;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  background: var(--primary-light);
+  color: var(--primary);
+}
+
+.category-tag.emergency {
+  background: #fee2e2;
+  color: #dc2626;
+}
+
+.category-tag.neonatology {
+  background: #fef3c7;
+  color: #d97706;
+}
+
+.category-tag.respiratory {
+  background: #e0e7ff;
+  color: #4f46e5;
+}
+
+.category-tag.neurology {
+  background: #f3e8ff;
+  color: #9333ea;
+}
+
+.guideline-summary {
+  font-size: 0.85rem;
+  color: var(--text-muted);
+  margin-bottom: 1rem;
+  line-height: 1.5;
+}
+
+.dosage-badge-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+  margin-bottom: 1rem;
+}
+
+.dosage-chip {
+  background: var(--surface-subtle);
+  border: 1px solid var(--border);
+  padding: 0.25rem 0.5rem;
+  font-size: 0.75rem;
+  font-family: monospace;
+  border-radius: var(--radius-sm);
+  color: #0369a1;
+  font-weight: 600;
+}
+
+.guideline-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  border-top: 1px solid var(--border-light);
+  padding-top: 0.85rem;
+  margin-top: 0.5rem;
+  font-size: 0.78rem;
+  color: var(--text-dim);
+}
+
+.calculator-box {
+  background: #f0f9ff;
+  border: 1px solid #bae6fd;
+  border-radius: var(--radius-md);
+  padding: 1rem;
+  margin-bottom: 1.25rem;
+}
+
+.calc-input-group {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  margin-top: 0.5rem;
+}
+
+/* ==========================================================================
+   Interactive Protocol Checklists
+   ========================================================================== */
+.protocol-step {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.85rem;
+  padding: 0.85rem 1rem;
+  background: var(--surface);
+  border: 1px solid var(--border-light);
+  border-radius: var(--radius-md);
+  margin-bottom: 0.65rem;
+  transition: background 0.15s ease;
+}
+
+.protocol-step:hover {
+  background: var(--surface-subtle);
+}
+
+.protocol-step.completed {
+  background: #f0fdf4;
+  border-color: #86efac;
+}
+
+.step-num {
+  width: 28px;
+  height: 28px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  background: #0284c7;
+  color: #ffffff;
+  font-weight: 700;
+  font-size: 0.8rem;
+  flex-shrink: 0;
+}
+
+.protocol-step.completed .step-num {
+  background: #16a34a;
+}
+
+/* ==========================================================================
+   Roster & Safe Staffing Ratio Dashboard
+   ========================================================================== */
+.ratio-banner-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 1rem;
+  margin-bottom: 1.5rem;
+}
+
+.ratio-metric-card {
+  background: var(--surface);
+  border: 1px solid var(--border-light);
+  border-radius: var(--radius-md);
+  padding: 1.15rem;
+  box-shadow: var(--shadow-sm);
+  display: flex;
+  flex-direction: column;
+}
+
+.ratio-metric-card.safe {
+  border-left: 4px solid var(--success);
+}
+
+.ratio-metric-card.warning {
+  border-left: 4px solid var(--warning);
+}
+
+.ratio-metric-card.critical {
+  border-left: 4px solid var(--critical);
+}
+
+.ratio-num {
+  font-size: 1.6rem;
+  font-weight: 800;
+  color: var(--text);
+  margin-top: 0.35rem;
+}
+
+.bleep-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  background: #e0f2fe;
+  color: #0369a1;
+  padding: 0.2rem 0.55rem;
+  border-radius: 9999px;
+  font-weight: 700;
+  font-size: 0.75rem;
+  cursor: pointer;
+  border: 1px solid #bae6fd;
+}
+
+.bleep-pill:hover {
+  background: #bae6fd;
+}
+
+/* ==========================================================================
+   Excel Upload Dropzone & Preview Table
+   ========================================================================== */
+.excel-dropzone {
+  border: 2px dashed #94a3b8;
+  border-radius: var(--radius-md);
+  padding: 2.5rem 1.5rem;
+  text-align: center;
+  background: #f8fafc;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  margin-bottom: 1.25rem;
+}
+
+.excel-dropzone:hover, .excel-dropzone.dragover {
+  border-color: #0284c7;
+  background: #f0f9ff;
+}
+
+.preview-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.8rem;
+  margin-top: 1rem;
+  max-height: 350px;
+  overflow-y: auto;
+  display: block;
+}
+
+.preview-table th {
+  background: #f1f5f9;
+  position: sticky;
+  top: 0;
+  text-align: left;
+  padding: 0.5rem;
+  border-bottom: 2px solid var(--border);
+}
+
+.preview-table td {
+  padding: 0.5rem;
+  border-bottom: 1px solid var(--border-light);
+}
+
+.preview-table tr.row-valid {
+  background: #f0fdf4;
+}
+
+.preview-table tr.row-warning {
+  background: #fffbeb;
+}
+
+.preview-table tr.row-error {
+  background: #fef2f2;
+}
+
+.action-icon-btn {
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 0.25rem 0.4rem;
+  font-size: 0.85rem;
+  border-radius: 4px;
+  transition: background 0.1s ease;
+}
+
+.action-icon-btn:hover {
+  background: var(--border-light);
+}
+

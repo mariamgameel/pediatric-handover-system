@@ -1,0 +1,540 @@
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+enum Role {
+  Resident
+  Specialist
+  Consultant
+  Admin
+}
+
+enum UserStatus {
+  Active
+  Inactive
+}
+
+enum PatientStatus {
+  Stable
+  Close_Monitoring
+  Critical
+}
+
+enum ProblemStatus {
+  Active
+  Resolved
+}
+
+enum Severity {
+  Routine
+  Urgent
+  Emergency
+}
+
+enum TaskPriority {
+  Routine
+  Urgent
+  Critical
+}
+
+enum TaskStatus {
+  Pending
+  In_Progress
+  Completed
+  Overdue
+  Cancelled
+}
+
+enum InvestigationStatus {
+  Requested
+  Pending
+  Result_Available
+  Reviewed
+}
+
+model User {
+  id                        String             @id @default(uuid())
+  userId                    String             @unique @map("user_id")
+  name                      String
+  email                     String             @unique
+  password                  String
+  role                      Role               @default(Resident)
+  status                    UserStatus         @default(Active)
+  permissions               Json               @default("[]")
+  shiftExempt               Boolean            @default(false) @map("shift_exempt")
+  activeShiftOverrideUntil  DateTime?          @map("active_shift_override_until")
+  lastLogin                 DateTime?          @map("last_login")
+  createdAt                 DateTime           @default(now()) @map("created_at")
+  updatedAt                 DateTime           @updatedAt @map("updated_at")
+
+  // Relations
+  responsiblePatients       Patient[]          @relation("ResponsibleDoctor")
+  updatedPatients           Patient[]          @relation("LastUpdatedDoctor")
+  dischargedPatients        Patient[]          @relation("DischargedByDoctor")
+  recordedVitals            VitalSign[]
+  createdProblems           ActiveProblem[]    @relation("ProblemCreatedBy")
+  updatedProblems           ActiveProblem[]    @relation("ProblemUpdatedBy")
+  resolvedProblems          ActiveProblem[]    @relation("ProblemResolvedBy")
+  problemUpdates            ActiveProblemUpdate[]
+  clinicalUpdates           ClinicalUpdate[]
+  managementPlans           ManagementPlan[]
+  requestedInvestigations   Investigation[]    @relation("InvestigationRequestedBy")
+  reviewedInvestigations    Investigation[]    @relation("InvestigationReviewedBy")
+  assignedTasks             Task[]             @relation("TaskAssignedTo")
+  createdTasks              Task[]             @relation("TaskCreatedBy")
+  completedTasks            Task[]             @relation("TaskCompletedBy")
+  handoversSent             HandoverRecord[]   @relation("HandoverFrom")
+  handoversReceived         HandoverRecord[]   @relation("HandoverTo")
+  handoversAcknowledged     HandoverRecord[]   @relation("HandoverAcknowledgedBy")
+  patientStatusUpdates      PatientStatusHistory[]
+  readAlerts                Alert[]            @relation("AlertReadBy")
+  auditLogs                 AuditLog[]
+  shifts                    ShiftSchedule[]    @relation("UserShifts")
+  assignedShifts            ShiftSchedule[]    @relation("AssignedShifts")
+  patientViews              PatientView[]
+  staffProfile              StaffProfile?
+  authoredGuidelines        Guideline[]        @relation("GuidelineAuthor")
+  approvedGuidelines        Guideline[]        @relation("GuidelineApprovedBy")
+  createdProtocols          Protocol[]         @relation("ProtocolCreatedBy")
+  requestedSwaps            ShiftSwapRequest[] @relation("SwapRequestedBy")
+  targetSwaps               ShiftSwapRequest[] @relation("SwapTarget")
+  reviewedSwaps             ShiftSwapRequest[] @relation("SwapReviewedBy")
+  staffLeaves               StaffLeave[]       @relation("UserLeaves")
+  approvedLeaves            StaffLeave[]       @relation("ApprovedLeaves")
+  handoverToShifts          ShiftSchedule[]    @relation("ShiftHandoverTo")
+
+  @@map("users")
+}
+
+model Patient {
+  id                    String                 @id @default(uuid())
+  patientId             String                 @unique @map("patient_id")
+  fileNumber            String                 @unique @map("file_number")
+  name                  String
+  ageYears              Int                    @default(0) @map("age_years")
+  ageMonths             Int                    @default(0) @map("age_months")
+  ageDays               Int                    @default(0) @map("age_days")
+  weight                Decimal                @db.Decimal(6, 2)
+  bedNumber             String                 @map("bed_number")
+  admissionDate         DateTime               @default(now()) @map("admission_date")
+  mainDiagnosis         String                 @map("main_diagnosis")
+  associatedDiagnoses   Json                   @default("[]") @map("associated_diagnoses")
+  allergies             Json                   @default("[\"NKDA\"]")
+  status                PatientStatus          @default(Stable)
+  statusReason          String?                @map("status_reason")
+  statusReasonOther     String?                @map("status_reason_other")
+  
+  // Discharge Info
+  isDischarged          Boolean                @default(false) @map("is_discharged")
+  dischargeOutcome      String?                @map("discharge_outcome")
+  dischargeDate         DateTime?              @map("discharge_date")
+  dischargeSummaryNotes String?                @map("discharge_summary_notes")
+  dischargedById        String?                @map("discharged_by_id")
+  dischargedBy          User?                  @relation("DischargedByDoctor", fields: [dischargedById], references: [id])
+
+  responsibleDoctorId   String?                @map("responsible_doctor_id")
+  responsibleDoctor     User?                  @relation("ResponsibleDoctor", fields: [responsibleDoctorId], references: [id])
+  lastUpdatedById       String?                @map("last_updated_by_id")
+  lastUpdatedBy         User?                  @relation("LastUpdatedDoctor", fields: [lastUpdatedById], references: [id])
+
+  createdAt             DateTime               @default(now()) @map("created_at")
+  updatedAt             DateTime               @updatedAt @map("updated_at")
+
+  // Child collections
+  statusHistory         PatientStatusHistory[]
+  vitalSigns            VitalSign[]
+  activeProblems        ActiveProblem[]
+  clinicalUpdates       ClinicalUpdate[]
+  managementPlans       ManagementPlan[]
+  investigations        Investigation[]
+  tasks                 Task[]
+  handoverRecords       HandoverRecord[]
+  alerts                Alert[]
+  patientViews          PatientView[]
+
+  @@index([bedNumber])
+  @@index([status])
+  @@index([isDischarged])
+  @@map("patients")
+}
+
+model PatientStatusHistory {
+  id          String        @id @default(uuid())
+  patientId   String        @map("patient_id")
+  patient     Patient       @relation(fields: [patientId], references: [id], onDelete: Cascade)
+  status      PatientStatus
+  reason      String?
+  reasonOther String?       @map("reason_other")
+  updatedById String        @map("updated_by_id")
+  updatedBy   User          @relation(fields: [updatedById], references: [id])
+  createdAt   DateTime      @default(now()) @map("created_at")
+
+  @@map("patient_status_history")
+}
+
+model VitalSign {
+  id              String    @id @default(uuid())
+  patientId       String    @map("patient_id")
+  patient         Patient   @relation(fields: [patientId], references: [id], onDelete: Cascade)
+  temperature     Decimal?  @db.Decimal(4, 1)
+  heartRate       Int?      @map("heart_rate")
+  respiratoryRate Int?      @map("respiratory_rate")
+  systolicBP      Int?      @map("systolic_bp")
+  diastolicBP     Int?      @map("diastolic_bp")
+  spO2            Decimal?  @db.Decimal(5, 2)
+  gcs             Int?
+  weight          Decimal?  @db.Decimal(6, 2)
+  oxygenMode      String?   @default("Room Air") @map("oxygen_mode")
+  oxygenFlowRate  Decimal?  @default(0) @db.Decimal(5, 2) @map("oxygen_flow_rate")
+  oxygenFiO2      Decimal?  @default(21) @db.Decimal(5, 2) @map("oxygen_fio2")
+  ivFluids        String?   @map("iv_fluids")
+  devices         Json      @default("[]")
+  recordedById    String    @map("recorded_by_id")
+  recordedBy      User      @relation(fields: [recordedById], references: [id])
+  recordedAt      DateTime  @default(now()) @map("recorded_at")
+
+  @@index([patientId, recordedAt(sort: Desc)])
+  @@map("vital_signs")
+}
+
+model ActiveProblem {
+  id             String                @id @default(uuid())
+  patientId      String                @map("patient_id")
+  patient        Patient               @relation(fields: [patientId], references: [id], onDelete: Cascade)
+  title          String
+  description    String?
+  startDate      DateTime              @default(now()) @map("start_date")
+  status         ProblemStatus         @default(Active)
+  resolvedAt     DateTime?             @map("resolved_at")
+  resolvedById   String?               @map("resolved_by_id")
+  resolvedBy     User?                 @relation("ProblemResolvedBy", fields: [resolvedById], references: [id])
+  resolutionNote String?               @map("resolution_note")
+  createdById    String                @map("created_by_id")
+  createdBy      User                  @relation("ProblemCreatedBy", fields: [createdById], references: [id])
+  updatedById    String?               @map("updated_by_id")
+  updatedBy      User?                 @relation("ProblemUpdatedBy", fields: [updatedById], references: [id])
+  createdAt      DateTime              @default(now()) @map("created_at")
+  updatedAt      DateTime              @updatedAt @map("updated_at")
+
+  updates        ActiveProblemUpdate[]
+
+  @@index([patientId, status, createdAt(sort: Desc)])
+  @@map("active_problems")
+}
+
+model ActiveProblemUpdate {
+  id          String        @id @default(uuid())
+  problemId   String        @map("problem_id")
+  problem     ActiveProblem @relation(fields: [problemId], references: [id], onDelete: Cascade)
+  note        String
+  updatedById String        @map("updated_by_id")
+  updatedBy   User          @relation(fields: [updatedById], references: [id])
+  createdAt   DateTime      @default(now()) @map("created_at")
+
+  @@map("active_problem_updates")
+}
+
+model ClinicalUpdate {
+  id                    String    @id @default(uuid())
+  patientId             String    @map("patient_id")
+  patient               Patient   @relation(fields: [patientId], references: [id], onDelete: Cascade)
+  type                  String
+  details               String
+  severity              Severity  @default(Routine)
+  isDeterioration       Boolean   @default(false) @map("is_deterioration")
+  deteriorationTrigger  String?   @map("deterioration_trigger")
+  deteriorationLevel    String?   @map("deterioration_level")
+  deteriorationAction   String?   @map("deterioration_action")
+  recordedById          String    @map("recorded_by_id")
+  recordedBy            User      @relation(fields: [recordedById], references: [id])
+  recordedAt            DateTime  @default(now()) @map("recorded_at")
+
+  @@index([patientId, recordedAt(sort: Desc)])
+  @@map("clinical_updates")
+}
+
+model ManagementPlan {
+  id                 String           @id @default(uuid())
+  patientId          String           @map("patient_id")
+  patient            Patient          @relation(fields: [patientId], references: [id], onDelete: Cascade)
+  version            Int              @default(1)
+  plan               String
+  recommendations    String?
+  clinicalReasoning  String?          @map("clinical_reasoning")
+  medications        Json             @default("[]")
+  ivFluids           String?          @map("iv_fluids")
+  oxygenSupport      String?          @map("oxygen_support")
+  supportiveCare     String?          @map("supportive_care")
+  procedures         Json             @default("[]")
+  isSuperseded       Boolean          @default(false) @map("is_superseded")
+  supersededById     String?          @unique @map("superseded_by_id")
+  supersededBy       ManagementPlan?  @relation("PlanVersionHistory", fields: [supersededById], references: [id])
+  supersedingPlan    ManagementPlan?  @relation("PlanVersionHistory")
+  authorRole         Role             @map("author_role")
+  createdById        String           @map("created_by_id")
+  createdBy          User             @relation(fields: [createdById], references: [id])
+  createdAt          DateTime         @default(now()) @map("created_at")
+
+  @@index([patientId, version(sort: Desc)])
+  @@map("management_plans")
+}
+
+model Investigation {
+  id           String              @id @default(uuid())
+  patientId    String              @map("patient_id")
+  patient      Patient             @relation(fields: [patientId], references: [id], onDelete: Cascade)
+  name         String
+  type         String
+  status       InvestigationStatus @default(Requested)
+  requestedById String             @map("requested_by_id")
+  requestedBy  User                @relation("InvestigationRequestedBy", fields: [requestedById], references: [id])
+  requestedAt  DateTime            @default(now()) @map("requested_at")
+  result       String?
+  resultAt     DateTime?           @map("result_at")
+  isAbnormal   Boolean             @default(false) @map("is_abnormal")
+  reviewedById String?             @map("reviewed_by_id")
+  reviewedBy   User?               @relation("InvestigationReviewedBy", fields: [reviewedById], references: [id])
+  reviewedAt   DateTime?           @map("reviewed_at")
+  notes        String?
+  createdAt    DateTime            @default(now()) @map("created_at")
+  updatedAt    DateTime            @updatedAt @map("updated_at")
+
+  @@index([patientId, status])
+  @@index([status, isAbnormal])
+  @@map("investigations")
+}
+
+model Task {
+  id              String       @id @default(uuid())
+  patientId       String       @map("patient_id")
+  patient         Patient      @relation(fields: [patientId], references: [id], onDelete: Cascade)
+  description     String
+  priority        TaskPriority @default(Routine)
+  dueAt           DateTime     @map("due_at")
+  assignedToId    String?      @map("assigned_to_id")
+  assignedTo      User?        @relation("TaskAssignedTo", fields: [assignedToId], references: [id])
+  status          TaskStatus   @default(Pending)
+  createdById     String       @map("created_by_id")
+  createdBy       User         @relation("TaskCreatedBy", fields: [createdById], references: [id])
+  completedById   String?      @map("completed_by_id")
+  completedBy     User?        @relation("TaskCompletedBy", fields: [completedById], references: [id])
+  completedAt     DateTime?    @map("completed_at")
+  completionNotes String?      @map("completion_notes")
+  createdAt       DateTime     @default(now()) @map("created_at")
+  updatedAt       DateTime     @updatedAt @map("updated_at")
+
+  @@index([assignedToId, status, dueAt])
+  @@index([patientId, status])
+  @@map("tasks")
+}
+
+model HandoverRecord {
+  id                  String    @id @default(uuid())
+  patientId           String    @map("patient_id")
+  patient             Patient   @relation(fields: [patientId], references: [id], onDelete: Cascade)
+  fromDoctorId        String    @map("from_doctor_id")
+  fromDoctor          User      @relation("HandoverFrom", fields: [fromDoctorId], references: [id])
+  toDoctorId          String?   @map("to_doctor_id")
+  toDoctor            User?     @relation("HandoverTo", fields: [toDoctorId], references: [id])
+  shiftType           String    @map("shift_type")
+  handoverDate        DateTime  @default(now()) @map("handover_date")
+  status              String
+  autoSummarySnapshot Json      @map("auto_summary_snapshot")
+  customNotes         String?   @map("custom_notes")
+  acknowledged        Boolean   @default(false)
+  acknowledgedById    String?   @map("acknowledged_by_id")
+  acknowledgedBy      User?     @relation("HandoverAcknowledgedBy", fields: [acknowledgedById], references: [id])
+  acknowledgedAt      DateTime? @map("acknowledged_at")
+  createdAt           DateTime  @default(now()) @map("created_at")
+  updatedAt           DateTime  @updatedAt @map("updated_at")
+
+  @@index([patientId, handoverDate(sort: Desc)])
+  @@map("handover_records")
+}
+
+model Alert {
+  id                String    @id @default(uuid())
+  patientId         String    @map("patient_id")
+  patient           Patient   @relation(fields: [patientId], references: [id], onDelete: Cascade)
+  type              String
+  message           String
+  priority          String    @default("Medium")
+  isRead            Boolean   @default(false) @map("is_read")
+  readById          String?   @map("read_by_id")
+  readBy            User?     @relation("AlertReadBy", fields: [readById], references: [id])
+  readAt            DateTime? @map("read_at")
+  relatedEntityType String?   @map("related_entity_type")
+  relatedEntityId   String?   @map("related_entity_id")
+  createdAt         DateTime  @default(now()) @map("created_at")
+
+  @@index([isRead, priority, createdAt(sort: Desc)])
+  @@map("alerts")
+}
+
+model AuditLog {
+  id            String   @id @default(uuid())
+  userId        String   @map("user_id")
+  user          User     @relation(fields: [userId], references: [id])
+  userStaffId   String   @map("user_staff_id")
+  userName      String   @map("user_name")
+  action        String
+  entity        String
+  entityId      String   @map("entity_id")
+  previousValue Json?    @map("previous_value")
+  newValue      Json?    @map("new_value")
+  ipAddress     String?  @map("ip_address")
+  timestamp     DateTime @default(now())
+
+  @@index([entity, entityId, timestamp(sort: Desc)])
+  @@index([userId, timestamp(sort: Desc)])
+  @@map("audit_logs")
+}
+
+model ShiftSchedule {
+  id                  String             @id @default(uuid())
+  userId              String             @map("user_id")
+  user                User               @relation("UserShifts", fields: [userId], references: [id])
+  shiftDate           DateTime           @map("shift_date")
+  shiftType           String             @map("shift_type")
+  startTime           DateTime           @map("start_time")
+  endTime             DateTime           @map("end_time")
+  gracePeriodMinutes  Int                @default(45) @map("grace_period_minutes")
+  assignedById        String?            @map("assigned_by_id")
+  assignedBy          User?              @relation("AssignedShifts", fields: [assignedById], references: [id])
+  wardZone            String?            @default("General Pediatric Ward") @map("ward_zone")
+  dutyRole            String?            @map("duty_role")
+  checkInTime         DateTime?          @map("check_in_time")
+  checkOutTime        DateTime?          @map("check_out_time")
+  handoverToUserId    String?            @map("handover_to_user_id")
+  handoverToUser      User?              @relation("ShiftHandoverTo", fields: [handoverToUserId], references: [id])
+  shiftHandoverStatus String             @default("Pending") @map("shift_handover_status")
+  source              String             @default("Manual")
+  status              String             @default("Scheduled")
+  notes               String?
+  swapRequests        ShiftSwapRequest[]
+  createdAt           DateTime           @default(now()) @map("created_at")
+  updatedAt           DateTime           @updatedAt @map("updated_at")
+
+  @@index([userId, startTime, endTime])
+  @@index([shiftDate, shiftType])
+  @@map("shift_schedules")
+}
+
+model PatientView {
+  id           String   @id @default(uuid())
+  userId       String   @map("user_id")
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  patientId    String   @map("patient_id")
+  patient      Patient  @relation(fields: [patientId], references: [id], onDelete: Cascade)
+  lastViewedAt DateTime @default(now()) @map("last_viewed_at")
+
+  @@unique([userId, patientId])
+  @@map("patient_views")
+}
+
+model Guideline {
+  id              String    @id @default(uuid())
+  title           String
+  slug            String    @unique
+  category        String
+  targetAgeGroup  String    @default("All_Pediatric") @map("target_age_group")
+  summary         String
+  contentMarkdown String    @map("content_markdown")
+  dosageFormulas  Json      @default("[]") @map("dosage_formulas")
+  references      Json      @default("[]")
+  version         String    @default("1.0")
+  status          String    @default("Active")
+  authorId        String?   @map("author_id")
+  author          User?     @relation("GuidelineAuthor", fields: [authorId], references: [id])
+  approvedById    String?   @map("approved_by_id")
+  approvedBy      User?     @relation("GuidelineApprovedBy", fields: [approvedById], references: [id])
+  reviewedAt      DateTime  @default(now()) @map("reviewed_at")
+  createdAt       DateTime  @default(now()) @map("created_at")
+  updatedAt       DateTime  @updatedAt @map("updated_at")
+
+  @@index([category, status])
+  @@map("guidelines")
+}
+
+model Protocol {
+  id                String   @id @default(uuid())
+  protocolCode      String   @unique @map("protocol_code")
+  title             String
+  category          String
+  priority          String   @default("Routine")
+  triggerConditions String?  @map("trigger_conditions")
+  checklistItems    Json     @default("[]") @map("checklist_items")
+  escalationRole    String?  @map("escalation_role")
+  status            String   @default("Active")
+  createdById       String?  @map("created_by_id")
+  createdBy         User?    @relation("ProtocolCreatedBy", fields: [createdById], references: [id])
+  createdAt         DateTime @default(now()) @map("created_at")
+  updatedAt         DateTime @updatedAt @map("updated_at")
+
+  @@index([category, status])
+  @@map("protocols")
+}
+
+model StaffProfile {
+  id                    String    @id @default(uuid())
+  userId                String    @unique @map("user_id")
+  user                  User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  staffCode             String    @unique @map("staff_code")
+  clinicalGrade         String    @map("clinical_grade")
+  pediatricSubspecialty String?   @map("pediatric_subspecialty")
+  bleepNumber           String?   @map("bleep_number")
+  phoneExtension        String?   @map("phone_extension")
+  emergencyContact      String?   @map("emergency_contact")
+  certifications        Json      @default("[]")
+  defaultWard           String?   @default("General Pediatric Ward") @map("default_ward")
+  maxConsecutiveNights  Int       @default(3) @map("max_consecutive_nights")
+  activeStatus          String    @default("Active") @map("active_status")
+  createdAt             DateTime  @default(now()) @map("created_at")
+  updatedAt             DateTime  @updatedAt @map("updated_at")
+
+  @@index([clinicalGrade, activeStatus])
+  @@map("staff_profiles")
+}
+
+model ShiftSwapRequest {
+  id               String        @id @default(uuid())
+  originalShiftId  String        @map("original_shift_id")
+  originalShift    ShiftSchedule @relation(fields: [originalShiftId], references: [id], onDelete: Cascade)
+  requestingUserId String        @map("requesting_user_id")
+  requestingUser   User          @relation("SwapRequestedBy", fields: [requestingUserId], references: [id])
+  targetUserId     String        @map("target_user_id")
+  targetUser       User          @relation("SwapTarget", fields: [targetUserId], references: [id])
+  reason           String?
+  status           String        @default("Pending_Approval")
+  reviewedById     String?       @map("reviewed_by_id")
+  reviewedBy       User?         @relation("SwapReviewedBy", fields: [reviewedById], references: [id])
+  createdAt        DateTime      @default(now()) @map("created_at")
+  updatedAt        DateTime      @updatedAt @map("updated_at")
+
+  @@index([status, requestingUserId, targetUserId])
+  @@map("shift_swap_requests")
+}
+
+model StaffLeave {
+  id           String    @id @default(uuid())
+  userId       String    @map("user_id")
+  user         User      @relation("UserLeaves", fields: [userId], references: [id], onDelete: Cascade)
+  leaveType    String    @map("leave_type")
+  startDate    DateTime  @map("start_date")
+  endDate      DateTime  @map("end_date")
+  status       String    @default("Pending")
+  approvedById String?   @map("approved_by_id")
+  approvedBy   User?     @relation("ApprovedLeaves", fields: [approvedById], references: [id])
+  notes        String?
+  createdAt    DateTime  @default(now()) @map("created_at")
+  updatedAt    DateTime  @updatedAt @map("updated_at")
+
+  @@index([userId, startDate, endDate])
+  @@map("staff_leaves")
+}
+

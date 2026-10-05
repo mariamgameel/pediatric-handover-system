@@ -34,6 +34,35 @@ const shiftScheduleSchema = new mongoose.Schema(
             type: mongoose.Schema.Types.ObjectId,
             ref: "User",
         },
+        wardZone: {
+            type: String,
+            default: "General Pediatric Ward",
+            enum: ["General Pediatric Ward", "Pediatric HDU", "Isolation Unit", "Neonatal Nursery", "Emergency Peds"],
+        },
+        dutyRole: {
+            type: String,
+            trim: true,
+        },
+        checkInTime: {
+            type: Date,
+        },
+        checkOutTime: {
+            type: Date,
+        },
+        handoverToUser: {
+            type: mongoose.Schema.Types.ObjectId,
+            ref: "User",
+        },
+        shiftHandoverStatus: {
+            type: String,
+            enum: ["Pending", "In_Progress", "Completed", "Bypassed"],
+            default: "Pending",
+        },
+        source: {
+            type: String,
+            enum: ["Manual", "Excel_Import"],
+            default: "Manual",
+        },
         status: {
             type: String,
             enum: ["Scheduled", "Active", "Completed", "Cancelled"],
@@ -50,6 +79,7 @@ const shiftScheduleSchema = new mongoose.Schema(
 );
 
 shiftScheduleSchema.index({ user: 1, startTime: 1, endTime: 1 });
+shiftScheduleSchema.index({ shiftDate: 1, shiftType: 1 });
 
 const ShiftSchedule = mongoose.model("ShiftSchedule", shiftScheduleSchema);
 
