@@ -1,2 +1,7 @@
 node_modules/
 .env
+.env.*
+scratch/
+*.deb
+*.tar.gz
+*.log
